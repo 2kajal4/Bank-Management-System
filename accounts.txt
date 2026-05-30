@@ -1,0 +1,8 @@
+102,kajal shukla,Current,13200.0
+101,Sohail,Current,21300.0
+103,Rahul,Current,100200.0
+1234567890,rahul nande,Savings,1500.0
+111,Pooja Gupta,Current,20300.0
+121,,Current,30000.0
+201,ishi,Current,35000.0
+2345,Tejas sir,Current,3000.0
