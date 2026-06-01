@@ -1,4 +1,4 @@
-package bankManagementSystem.model;
+package com.bank.bms.model;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

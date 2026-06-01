@@ -1,10 +1,10 @@
-package bankManagementSystem.app;
+package com.bank.bms.app;
 
 import java.util.*;
 
-import bankManagementSystem.model.Account;
-import bankManagementSystem.service.BankService;
-import bankManagementSystem.util.FileUtil;
+import com.bank.bms.model.Account;
+import com.bank.bms.service.BankService;
+import com.bank.bms.util.FileUtil;
 
 public class BankApp {
 

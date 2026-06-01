@@ -1,10 +1,10 @@
-package bankManagementSystem.util;
+package com.bank.bms.util;
 
 import java.io.*;
 import java.util.*;
 
-import bankManagementSystem.model.Account;
-import bankManagementSystem.model.Transaction;
+import com.bank.bms.model.Account;
+import com.bank.bms.model.Transaction;
 
 public class FileUtil {
 

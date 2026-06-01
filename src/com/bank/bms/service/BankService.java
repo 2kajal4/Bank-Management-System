@@ -1,12 +1,12 @@
-package bankManagementSystem.service;
+package com.bank.bms.service;
 
 import java.util.List;
 
-import bankManagementSystem.model.Account;
-import bankManagementSystem.model.CurrentAccount;
-import bankManagementSystem.model.SavingAccount;
-import bankManagementSystem.model.Transaction;
-import bankManagementSystem.util.FileUtil;
+import com.bank.bms.model.Account;
+import com.bank.bms.model.CurrentAccount;
+import com.bank.bms.model.SavingAccount;
+import com.bank.bms.model.Transaction;
+import com.bank.bms.util.FileUtil;
 
 public class BankService {
 	
