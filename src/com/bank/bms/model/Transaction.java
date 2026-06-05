@@ -21,6 +21,9 @@ public class Transaction {
         this.date = format.format(currentDate);
     }
 
+    public int getAccNumber() {
+        return accNumber;
+    }
     public String toFileString() {
         return accNumber + "," + type + "," + amount + "," + date;
     }

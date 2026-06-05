@@ -7,7 +7,7 @@ import com.bank.bms.model.Account;
 import com.bank.bms.model.Transaction;
 
 public class FileUtil {
-
+ 
     public static void saveAccount(Account acc) throws IOException {
 
         FileWriter writer = new FileWriter("accounts.txt", true);
@@ -46,15 +46,14 @@ public class FileUtil {
 
     public static void saveTransaction(Transaction t) throws IOException {
 
-        FileWriter writer = new FileWriter("transactions.txt", true);
+    	FileWriter writer = new FileWriter("transactions_" + t.getAccNumber() + ".txt", true);
         writer.write(t.toFileString() + "\n");
         writer.close();
     }
 
     public static void showTransactions(int accNo) throws IOException {
 
-        File file = new File("transactions.txt");
-
+    	File file = new File("transactions_" + accNo + ".txt");
         if (!file.exists()) {
             System.out.println("No transactions found.");
             return;
@@ -64,17 +63,14 @@ public class FileUtil {
 
         String line;
         while ((line = reader.readLine()) != null) {
+        	String[] parts = line.split(",");
 
-            if (line.startsWith(accNo + ",")) {
+            System.out.println(
+                "Type: " + parts[1] +
+                " | Amount: " + parts[2] +
+                " | Date: " + parts[3]
+            );
 
-                String[] parts = line.split(",");
-
-                System.out.println(
-                        "Type: " + parts[1] +
-                        " | Amount: " + parts[2] +
-                        " | Date: " + parts[3]
-                );
-            }
         }
 
         reader.close();

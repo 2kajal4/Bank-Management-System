@@ -4,8 +4,8 @@ public class SavingAccount extends Account {
 
     private double interestRate = 4.0;
 
-    public SavingAccount(int accNumber, String name, double balance) {
-        super(accNumber, name, "Savings", balance);
+    public SavingAccount(int accNumber, String name, double balance,String password) {
+        super(accNumber, name, "Savings", balance,password);
     }
 
     public void addInterest() {

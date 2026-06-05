@@ -27,20 +27,32 @@ public class BankService {
         return null;
     }
 
-    public String createAccount(int accNo, String name, String type, double bal) throws Exception {
+    public String createAccount(String name, String type, double bal,String password) throws Exception {
+    	
+    	 int accNo = generateAccountNumber();   // 👈 AUTO GENERATE
 
         if (findAccount(accNo) != null) {
             return "Account already exists!";
         }
 
         Account acc = type.equalsIgnoreCase("Savings")
-                ? new SavingAccount(accNo, name, bal)
-                : new CurrentAccount(accNo, name, bal);
+                ? new SavingAccount(accNo, name, bal,password)
+                : new CurrentAccount(accNo, name, bal,password);
 
         accountList.add(acc);
         FileUtil.saveAccount(acc);
 
-        return "Account Created Successfully!";
+        return "Account Created Successfully!" + accNo;
+    }
+    
+    private int generateAccountNumber() {
+
+        if (accountList.isEmpty()) {
+            return 1001; // starting account number
+        }
+
+        int lastAccNo = accountList.get(accountList.size() - 1).getAccNumber();
+        return lastAccNo + 1;
     }
 
     public String deposit(Account acc, double amt) throws Exception {

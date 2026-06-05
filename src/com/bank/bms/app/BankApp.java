@@ -1,5 +1,8 @@
 package com.bank.bms.app;
 
+import com.bank.bms.service.RoleService;
+import com.bank.bms.util.PasswordUtil;
+
 import java.util.*;
 
 import com.bank.bms.model.Account;
@@ -14,6 +17,7 @@ public class BankApp {
     public static void main(String[] args) throws Exception {
 
         service = new BankService();
+        RoleService.loadRoles();
 
         while (true) {
 
@@ -35,8 +39,13 @@ public class BankApp {
     // ADMIN
     static void adminMenu() throws Exception {
 
+        System.out.print("Enter Role (SUPER_ADMIN / SUPER_USER): ");
+        String role = sc.next();
+
         System.out.print("Enter Password: ");
-        if (!sc.next().equals("admin123")) {
+        String inputPass = sc.next();
+
+        if (!RoleService.authenticate(role, inputPass)) {
             System.out.println("Wrong Password!");
             return;
         }
@@ -52,8 +61,8 @@ public class BankApp {
             int ch = sc.nextInt();
 
             if (ch == 1) {
-                System.out.print("Acc No: ");
-                int accNo = sc.nextInt(); sc.nextLine();
+                
+            	 sc.nextLine();
 
                 System.out.print("Name: ");
                 String name = sc.nextLine();
@@ -63,14 +72,27 @@ public class BankApp {
 
                 System.out.print("Balance: ");
                 double bal = sc.nextDouble();
+                
+                System.out.print("Set Password: ");
+                String pass = sc.next();
 
-                System.out.println(service.createAccount(accNo, name, type, bal));
+                String encryptedPass = PasswordUtil.encrypt(pass);
+
+                if (RoleService.hasPermission(role, "CREATE_ACCOUNT")) {
+                    System.out.println(service.createAccount(name, type, bal,encryptedPass));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
             else if (ch == 2) {
-                for (Account acc : service.getAllAccounts()) {
-                    acc.display();
-                    System.out.println("-----------");
+                if (RoleService.hasPermission(role, "VIEW_ACCOUNTS")) {
+                    for (Account acc : service.getAllAccounts()) {
+                        acc.display();
+                        System.out.println("-----------");
+                    }
+                } else {
+                    System.out.println("Access Denied!");
                 }
             }
 
@@ -91,6 +113,17 @@ public class BankApp {
             System.out.println("Account not found!");
             return;
         }
+        
+     // ✅ ADD PASSWORD LOGIN HERE
+        System.out.print("Enter Password: ");
+        String inputPass = sc.next();
+
+        if (!PasswordUtil.encrypt(inputPass).equals(acc.getPassword())) {
+            System.out.println("Wrong Password!");
+            return;
+        }
+
+        String role = "USER";   
 
         while (true) {
 
@@ -108,16 +141,32 @@ public class BankApp {
             if (ch == 1) {
                 System.out.print("Amount: ");
                 double amt = sc.nextDouble();
-                System.out.println(service.deposit(acc, amt));
+
+                if (RoleService.hasPermission(role, "DEPOSIT")) {
+                    System.out.println(service.deposit(acc, amt));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
             else if (ch == 2) {
                 System.out.print("Amount: ");
                 double amt = sc.nextDouble();
-                System.out.println(service.withdraw(acc, amt));
+
+                if (RoleService.hasPermission(role, "WITHDRAW")) {
+                    System.out.println(service.withdraw(acc, amt));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
-            else if (ch == 3) acc.display();
+            else if (ch == 3) {
+                if (RoleService.hasPermission(role, "BALANCE")) {
+                    acc.display();
+                } else {
+                    System.out.println("Access Denied!");
+                }
+            }
 
             else if (ch == 4) {
                 System.out.print("Receiver Acc: ");
@@ -126,11 +175,19 @@ public class BankApp {
                 System.out.print("Amount: ");
                 double amt = sc.nextDouble();
 
-                System.out.println(service.transfer(acc, toAcc, amt));
+                if (RoleService.hasPermission(role, "TRANSFER")) {
+                    System.out.println(service.transfer(acc, toAcc, amt));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
             else if (ch == 5) {
-                FileUtil.showTransactions(acc.getAccNumber());
+                if (RoleService.hasPermission(role, "HISTORY")) {
+                    FileUtil.showTransactions(acc.getAccNumber());
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
             else if (ch == 6) break;

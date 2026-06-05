@@ -4,8 +4,8 @@ public class CurrentAccount extends Account {
 
     private double overdraftLimit = 5000;
 
-    public CurrentAccount(int accNumber, String name, double balance) {
-        super(accNumber, name, "Current", balance);
+    public CurrentAccount(int accNumber, String name, double balance,String password) {
+        super(accNumber, name, "Current", balance,password);
     }
 
     @Override

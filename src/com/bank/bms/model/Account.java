@@ -6,12 +6,14 @@ public class Account {
     private String name;
     private String type;
     private double balance;
+    private String password;
 
-    public Account(int accNumber, String name, String type, double balance) {
+    public Account(int accNumber, String name, String type, double balance, String password) {
         this.accNumber = accNumber;
         this.name = name;
         this.type = type;
         this.balance = balance;
+        this.password = password;
     }
 
     public int getAccNumber() {
@@ -22,6 +24,11 @@ public class Account {
         return balance;
     }
 
+    public String getPassword() {
+        return password;
+    }
+    
+    
     public void deposit(double amount) {
         if (amount > 0) {
             balance += amount;
@@ -47,7 +54,7 @@ public class Account {
     }
 
     public String toFileString() {
-        return accNumber + "," + name + "," + type + "," + balance;
+        return accNumber + "," + name + "," + type + "," + balance+ "," + password;
     }
 
     public static Account fromFileString(String line) {
@@ -58,11 +65,12 @@ public class Account {
         String accName = parts[1].trim();
         String accType = parts[2].trim();
         double accBalance = Double.parseDouble(parts[3].trim());
+        String password = parts[4].trim();
 
         if (accType.equalsIgnoreCase("Savings")) {
-            return new SavingAccount(accNo, accName, accBalance);
+            return new SavingAccount(accNo, accName, accBalance, password);
         } else {
-            return new CurrentAccount(accNo, accName, accBalance);
+            return new CurrentAccount(accNo, accName, accBalance, password);
         }
     }
 
