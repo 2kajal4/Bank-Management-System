@@ -75,4 +75,44 @@ public class FileUtil {
 
         reader.close();
     }
+    
+    public static double getTotalAmount(int accNo, int days) throws IOException {
+
+        File file = new File("transactions_" + accNo + ".txt");
+
+        if (!file.exists()) return 0;
+
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+
+        String line;
+        double total = 0;
+
+        long currentTime = System.currentTimeMillis();
+        long timeLimit = days * 24L * 60 * 60 * 1000;
+
+        while ((line = reader.readLine()) != null) {
+
+            String[] parts = line.split(",");
+
+            double amount = Double.parseDouble(parts[2]);
+            String dateStr = parts[3];
+
+            java.text.SimpleDateFormat format =
+                    new java.text.SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+
+            try {
+                Date date = format.parse(dateStr);
+
+                if (currentTime - date.getTime() <= timeLimit) {
+                    total += amount;
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        reader.close();
+        return total;
+    }
 }

@@ -36,33 +36,38 @@ public class BankApp {
         }
     }
 
-    // ADMIN
+    // ================= ADMIN =================
     static void adminMenu() throws Exception {
 
-        System.out.print("Enter Role (SUPER_ADMIN / SUPER_USER): ");
-        String role = sc.next();
+        System.out.print("Enter Username: ");
+        String username = sc.next();
 
         System.out.print("Enter Password: ");
         String inputPass = sc.next();
 
-        if (!RoleService.authenticate(role, inputPass)) {
-            System.out.println("Wrong Password!");
+        // ✅ Authenticate once
+        if (!RoleService.authenticate(username, inputPass)) {
+            System.out.println("Wrong Username or Password!");
             return;
         }
+
+        // ✅ Get role
+        String role = RoleService.getRole(username);
 
         while (true) {
 
             System.out.println("\n--- ADMIN MENU ---");
             System.out.println("1. Create Account");
             System.out.println("2. View All Accounts");
-            System.out.println("3. Back");
+            System.out.println("3. Create Super User");
+            System.out.println("4. Back");
             System.out.print("Enter choice: ");
 
             int ch = sc.nextInt();
 
             if (ch == 1) {
-                
-            	 sc.nextLine();
+
+                sc.nextLine();
 
                 System.out.print("Name: ");
                 String name = sc.nextLine();
@@ -72,20 +77,21 @@ public class BankApp {
 
                 System.out.print("Balance: ");
                 double bal = sc.nextDouble();
-                
+
                 System.out.print("Set Password: ");
                 String pass = sc.next();
 
                 String encryptedPass = PasswordUtil.encrypt(pass);
 
                 if (RoleService.hasPermission(role, "CREATE_ACCOUNT")) {
-                    System.out.println(service.createAccount(name, type, bal,encryptedPass));
+                    System.out.println(service.createAccount(name, type, bal, encryptedPass));
                 } else {
                     System.out.println("Access Denied!");
                 }
             }
 
             else if (ch == 2) {
+
                 if (RoleService.hasPermission(role, "VIEW_ACCOUNTS")) {
                     for (Account acc : service.getAllAccounts()) {
                         acc.display();
@@ -96,12 +102,39 @@ public class BankApp {
                 }
             }
 
-            else if (ch == 3) break;
-            else System.out.println("❌ Invalid choice!");
+            else if (ch == 3) {
+
+                // ✅ ONLY SUPER ADMIN
+                if (role.equals("SUPER_ADMIN")) {
+
+                    sc.nextLine();
+
+                    System.out.print("Enter Super User Name: ");
+                    String name = sc.nextLine();
+
+                    System.out.print("Set Password: ");
+                    String pass = sc.next();
+
+                    RoleService.addSuperUser(name, pass);
+
+                    System.out.println("Super User Created Successfully!");
+
+                } else {
+                    System.out.println("Access Denied! Only SUPER_ADMIN allowed.");
+                }
+            }
+
+            else if (ch == 4) {
+                break;
+            }
+
+            else {
+                System.out.println("❌ Invalid choice!");
+            }
         }
     }
 
-    // USER
+    // ================= USER =================
     static void userMenu() throws Exception {
 
         System.out.print("Enter Account Number: ");
@@ -113,8 +146,7 @@ public class BankApp {
             System.out.println("Account not found!");
             return;
         }
-        
-     // ✅ ADD PASSWORD LOGIN HERE
+
         System.out.print("Enter Password: ");
         String inputPass = sc.next();
 
@@ -123,7 +155,7 @@ public class BankApp {
             return;
         }
 
-        String role = "USER";   
+        String role = "USER";
 
         while (true) {
 
@@ -139,6 +171,7 @@ public class BankApp {
             int ch = sc.nextInt();
 
             if (ch == 1) {
+
                 System.out.print("Amount: ");
                 double amt = sc.nextDouble();
 
@@ -150,6 +183,7 @@ public class BankApp {
             }
 
             else if (ch == 2) {
+
                 System.out.print("Amount: ");
                 double amt = sc.nextDouble();
 
@@ -161,6 +195,7 @@ public class BankApp {
             }
 
             else if (ch == 3) {
+
                 if (RoleService.hasPermission(role, "BALANCE")) {
                     acc.display();
                 } else {
@@ -169,6 +204,7 @@ public class BankApp {
             }
 
             else if (ch == 4) {
+
                 System.out.print("Receiver Acc: ");
                 int toAcc = sc.nextInt();
 
@@ -183,6 +219,7 @@ public class BankApp {
             }
 
             else if (ch == 5) {
+
                 if (RoleService.hasPermission(role, "HISTORY")) {
                     FileUtil.showTransactions(acc.getAccNumber());
                 } else {
@@ -190,8 +227,13 @@ public class BankApp {
                 }
             }
 
-            else if (ch == 6) break;
-            else System.out.println("❌ Invalid choice!");
+            else if (ch == 6) {
+                break;
+            }
+
+            else {
+                System.out.println("❌ Invalid choice!");
+            }
         }
     }
 }

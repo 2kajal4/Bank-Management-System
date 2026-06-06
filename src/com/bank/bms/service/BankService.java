@@ -10,6 +10,10 @@ import com.bank.bms.util.FileUtil;
 
 public class BankService {
 	
+	private static final double DAILY_LIMIT = 10000;
+	private static final double WEEKLY_LIMIT = 50000;
+	private static final double MONTHLY_LIMIT = 200000;
+	
     private List<Account> accountList;
 
     public BankService() throws Exception {
@@ -59,22 +63,50 @@ public class BankService {
 
         if (amt <= 0) return "Invalid Amount!";
 
+        double daily = FileUtil.getTotalAmount(acc.getAccNumber(), 1);
+        double weekly = FileUtil.getTotalAmount(acc.getAccNumber(), 7);
+        double monthly = FileUtil.getTotalAmount(acc.getAccNumber(), 30);
+
+        if (daily + amt > DAILY_LIMIT)
+            return "❌ Daily limit exceeded!";
+
+        if (weekly + amt > WEEKLY_LIMIT)
+            return "❌ Weekly limit exceeded!";
+
+        if (monthly + amt > MONTHLY_LIMIT)
+            return "❌ Monthly limit exceeded!";
+
         acc.deposit(amt);
+
         FileUtil.updateAllAccounts(accountList);
         FileUtil.saveTransaction(new Transaction(acc.getAccNumber(), "Deposit", amt));
 
-        return "Deposit Successful! Updated Balance: " + acc.getBalance();
+        return "Deposit Successful! Balance: " + acc.getBalance();
     }
 
     public String withdraw(Account acc, double amt) throws Exception {
 
+        double daily = FileUtil.getTotalAmount(acc.getAccNumber(), 1);
+        double weekly = FileUtil.getTotalAmount(acc.getAccNumber(), 7);
+        double monthly = FileUtil.getTotalAmount(acc.getAccNumber(), 30);
+
+        if (daily + amt > DAILY_LIMIT)
+            return "❌ Daily limit exceeded!";
+
+        if (weekly + amt > WEEKLY_LIMIT)
+            return "❌ Weekly limit exceeded!";
+
+        if (monthly + amt > MONTHLY_LIMIT)
+            return "❌ Monthly limit exceeded!";
+
         String res = acc.withdraw(amt);
 
         if (res.contains("Successful")) {
+
             FileUtil.updateAllAccounts(accountList);
             FileUtil.saveTransaction(new Transaction(acc.getAccNumber(), "Withdraw", amt));
 
-            return "Withdrawal Successful! Remaining Balance: " + acc.getBalance();
+            return "Withdrawal Successful! Balance: " + acc.getBalance();
         }
 
         return res;
@@ -84,20 +116,34 @@ public class BankService {
 
         Account receiver = findAccount(toAcc);
 
-        if (receiver == null) return "Invalid Receiver Account!";
+        if (receiver == null) return "Invalid Receiver!";
         if (amt <= 0) return "Invalid Amount!";
+
+        double daily = FileUtil.getTotalAmount(sender.getAccNumber(), 1);
+        double weekly = FileUtil.getTotalAmount(sender.getAccNumber(), 7);
+        double monthly = FileUtil.getTotalAmount(sender.getAccNumber(), 30);
+
+        if (daily + amt > DAILY_LIMIT)
+            return "❌ Daily limit exceeded!";
+
+        if (weekly + amt > WEEKLY_LIMIT)
+            return "❌ Weekly limit exceeded!";
+
+        if (monthly + amt > MONTHLY_LIMIT)
+            return "❌ Monthly limit exceeded!";
 
         String res = sender.withdraw(amt);
 
         if (res.contains("Successful")) {
 
             receiver.deposit(amt);
+
             FileUtil.updateAllAccounts(accountList);
 
             FileUtil.saveTransaction(new Transaction(sender.getAccNumber(), "Transfer Sent", amt));
             FileUtil.saveTransaction(new Transaction(toAcc, "Transfer Received", amt));
 
-            return "Transfer Successful! Your Balance: " + sender.getBalance();
+            return "Transfer Successful! Balance: " + sender.getBalance();
         }
 
         return res;
