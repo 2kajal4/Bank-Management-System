@@ -1,98 +1,95 @@
 package com.bank.bms.service;
+
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.util.*;
 
-import java.util.Map;
-
 public class RoleService {
-	
-	private static Map<String, List<String>> rolePermissions = new HashMap<>();
-	private static Map<String, String> rolePasswords = new HashMap<>();
-	private static Map<String, String> userRoles = new HashMap<>();
-	
-	public static void loadRoles() {
-	    try {
-	        Properties props = new Properties();
-	        props.load(new FileInputStream("roles.properties"));
 
-	        for (String role : props.stringPropertyNames()) {
+    private static Map<String, List<String>> rolePermissions = new HashMap<>();
+    private static Map<String, String> rolePasswords = new HashMap<>();
 
-	            String roleKey = role; // clarity
+    // ================= LOAD ROLES =================
+    public static void loadRoles() {
+        try {
+            Properties props = new Properties();
+            props.load(new FileInputStream("roles.properties"));
 
-	            String value = props.getProperty(role);
+            rolePermissions.clear();
+            rolePasswords.clear();
 
-	            String[] parts = value.split("\\|");
+            for (String role : props.stringPropertyNames()) {
 
-	            String permissionsPart = parts[0];
-	            String passwordPart = parts[1];
+                String value = props.getProperty(role);
 
-	            List<String> permissions = Arrays.asList(permissionsPart.split(","));
+                if (!value.contains("|")) {
+                    System.out.println("Invalid entry in roles file for: " + role);
+                    continue;
+                }
 
-	            rolePermissions.put(roleKey, permissions);
+                String[] parts = value.split("\\|");
 
-	            // store encrypted password
-	            rolePasswords.put(roleKey, com.bank.bms.util.PasswordUtil.encrypt(passwordPart));
+                String permissionsPart = parts[0];
+                String passwordPart = parts[1];
 
-	            // ✅ THIS IS THE IMPORTANT LINE (ADD HERE)
-	            userRoles.put(roleKey, roleKey.equals("SUPER_ADMIN") ? "SUPER_ADMIN" : "SUPER_USER");
-	        }
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
+                List<String> permissions = Arrays.asList(permissionsPart.split(","));
 
-	public static boolean hasPermission(String role, String permission) {
+                rolePermissions.put(role, permissions);
 
-		String actualRole = userRoles.get(role);
+                // ✅ store password AS IT IS (no encryption)
+                rolePasswords.put(role, passwordPart);
+            }
 
-		List<String> perms = rolePermissions.get(actualRole);
-	    if (perms == null) return false;
+        } catch (Exception e) {
+            System.out.println("Error loading roles!");
+            e.printStackTrace();
+        }
+    }
 
-	    if (perms.contains("ALL")) return true;
+    // ================= PERMISSION =================
+    public static boolean hasPermission(String role, String permission) {
 
-	    return perms.contains(permission);
-	}
-	
-	
-	public static boolean authenticate(String username, String inputPassword) {
-		username = username.toUpperCase(); 
+        List<String> perms = rolePermissions.get(role);
 
-	    String storedPass = rolePasswords.get(username);
+        if (perms == null) return false;
+        if (perms.contains("ALL")) return true;
 
-	    if (storedPass == null) return false;
+        return perms.contains(permission);
+    }
 
-	    return storedPass.equals(
-	        com.bank.bms.util.PasswordUtil.encrypt(inputPassword)
-	    );
-	}
-	
-	
-	public static String getRole(String username) {
+    // ================= AUTH =================
+    public static boolean authenticate(String username, String inputPassword) {
 
-	    if (username.equals("SUPER_ADMIN")) return "SUPER_ADMIN";
+        String storedPass = rolePasswords.get(username);
 
-	    return "SUPER_USER"; // all others are super users
-	}
-	
-	
-	public static void addSuperUser(String name, String password) {
-	    try {
-	        FileWriter fw = new FileWriter("roles.properties", true);
+        if (storedPass == null) return false;
 
-	        String roleKey = name.toUpperCase().replace(" ", "_");
+        // ✅ DIRECT COMPARISON (NO ENCRYPTION)
+        return storedPass.equals(inputPassword);
+    }
 
-	        String entry = roleKey + "=CREATE_ACCOUNT,VIEW_ACCOUNTS|" + password;
+    // ================= ADD SUPER USER =================
+    public static void addSuperUser(String name, String password) {
+        try {
+            FileWriter fw = new FileWriter("roles.properties", true);
 
-	        fw.write("\n" + entry);
-	        fw.close();
+            String roleKey = name.toUpperCase().replace(" ", "_");
 
-	        System.out.println("Saved in roles file!");
+            
+            String entry = roleKey +
+                    "=CREATE_ACCOUNT,VIEW_ACCOUNTS,EDIT_USER,DELETE_USER|" +
+                    password;
 
-	        loadRoles(); // reload roles
+            fw.write("\n" + entry);
+            fw.close();
 
-	    } catch (Exception e) {
-	        e.printStackTrace();
-	    }
-	}
+            System.out.println("Saved in roles file!");
+
+            loadRoles();
+
+        } catch (Exception e) {
+            System.out.println("Error adding super user!");
+            e.printStackTrace();
+        }
+    }
 }

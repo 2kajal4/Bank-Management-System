@@ -2,7 +2,6 @@ package com.bank.bms.app;
 
 import com.bank.bms.service.RoleService;
 import com.bank.bms.util.PasswordUtil;
-
 import java.util.*;
 
 import com.bank.bms.model.Account;
@@ -27,7 +26,7 @@ public class BankApp {
             System.out.println("3. Exit");
             System.out.print("Enter your choice: ");
 
-            int choice = sc.nextInt();
+            int choice = getValidInt();
 
             if (choice == 1) adminMenu();
             else if (choice == 2) userMenu();
@@ -39,20 +38,26 @@ public class BankApp {
     // ================= ADMIN =================
     static void adminMenu() throws Exception {
 
-        System.out.print("Enter Username: ");
-        String username = sc.next();
+        String username;
+
+        while (true) {
+            System.out.print("Enter Username: ");
+            username = sc.next();
+
+            if (username.matches("[A-Za-z_]+")) break;
+            else System.out.println("❌ Invalid Username!");
+        }
 
         System.out.print("Enter Password: ");
         String inputPass = sc.next();
 
-        // ✅ Authenticate once
         if (!RoleService.authenticate(username, inputPass)) {
             System.out.println("Wrong Username or Password!");
             return;
         }
 
-        // ✅ Get role
-        String role = RoleService.getRole(username);
+        showWelcome(username);
+        String role = username;
 
         while (true) {
 
@@ -60,36 +65,86 @@ public class BankApp {
             System.out.println("1. Create Account");
             System.out.println("2. View All Accounts");
             System.out.println("3. Create Super User");
-            System.out.println("4. Back");
+            System.out.println("4. Delete User");
+            System.out.println("5. Edit User");
+            System.out.println("6. Back");
             System.out.print("Enter choice: ");
 
-            int ch = sc.nextInt();
+            int ch = getValidInt();
 
+            // ================= CREATE ACCOUNT =================
             if (ch == 1) {
 
                 sc.nextLine();
 
-                System.out.print("Name: ");
-                String name = sc.nextLine();
+                // NAME
+                String name;
+                while (true) {
+                    System.out.print("Name: ");
+                    name = sc.nextLine();
 
-                System.out.print("Type: ");
-                String type = sc.nextLine();
+                    if (PasswordUtil.isValidName(name)) break;
+                    else System.out.println("❌ Only letters allowed!");
+                }
 
-                System.out.print("Balance: ");
-                double bal = sc.nextDouble();
+                // TYPE
+                String type;
+                while (true) {
+                    System.out.print("Type (saving/current): ");
+                    type = sc.nextLine();
 
-                System.out.print("Set Password: ");
-                String pass = sc.next();
+                    if (type.equalsIgnoreCase("saving") || type.equalsIgnoreCase("current"))
+                        break;
+                    else System.out.println("❌ Invalid type!");
+                }
+
+                // BALANCE
+                double bal = getValidAmount();
+
+                // PASSWORD
+                String pass;
+                while (true) {
+                    System.out.print("Set Password: ");
+                    pass = sc.next();
+
+                    if (!PasswordUtil.isStrongPassword(pass)) {
+                        System.out.println("❌ Weak Password!");
+                    } else break;
+                }
 
                 String encryptedPass = PasswordUtil.encrypt(pass);
 
+                // ✅ PHONE (ADD HERE)
+                String phone;
+                while (true) {
+                    System.out.print("Phone: ");
+                    phone = sc.next();
+
+                    if (phone.matches("\\d{10}")) break;
+                    else System.out.println("❌ Enter valid 10-digit phone number!");
+                }
+
+                // ✅ EMAIL (ADD HERE)
+                String email;
+                while (true) {
+                    System.out.print("Email: ");
+                    email = sc.next();
+
+                    if (email.contains("@") && email.contains(".")) break;
+                    else System.out.println("❌ Invalid email!");
+                }
+
+                // SERVICE CALL
                 if (RoleService.hasPermission(role, "CREATE_ACCOUNT")) {
-                    System.out.println(service.createAccount(name, type, bal, encryptedPass));
+                    System.out.println(
+                        service.createAccount(name, type, bal, encryptedPass, phone, email)
+                    );
                 } else {
                     System.out.println("Access Denied!");
                 }
             }
 
+            // ================= VIEW =================
             else if (ch == 2) {
 
                 if (RoleService.hasPermission(role, "VIEW_ACCOUNTS")) {
@@ -102,43 +157,83 @@ public class BankApp {
                 }
             }
 
+            // ================= CREATE SUPER USER =================
             else if (ch == 3) {
 
-                // ✅ ONLY SUPER ADMIN
                 if (role.equals("SUPER_ADMIN")) {
 
                     sc.nextLine();
 
-                    System.out.print("Enter Super User Name: ");
-                    String name = sc.nextLine();
+                    String name;
+                    while (true) {
+                        System.out.print("Enter Super User Name: ");
+                        name = sc.nextLine();
 
-                    System.out.print("Set Password: ");
-                    String pass = sc.next();
+                        if (PasswordUtil.isValidName(name)) break;
+                        else System.out.println("❌ Invalid Name!");
+                    }
+
+                    String pass;
+                    while (true) {
+                        System.out.print("Set Password: ");
+                        pass = sc.next();
+
+                        if (!PasswordUtil.isStrongPassword(pass)) {
+                            System.out.println("❌ Weak Password!");
+                        } else break;
+                    }
 
                     RoleService.addSuperUser(name, pass);
-
-                    System.out.println("Super User Created Successfully!");
+                    System.out.println("✅ Super User Created!");
 
                 } else {
-                    System.out.println("Access Denied! Only SUPER_ADMIN allowed.");
+                    System.out.println("❌ Only SUPER_ADMIN allowed!");
                 }
             }
 
+            // ================= DELETE =================
             else if (ch == 4) {
-                break;
+
+                int accNo = getValidNumber("Enter Account No: ");
+
+                if (RoleService.hasPermission(role, "DELETE_USER")) {
+                    System.out.println(service.deleteAccount(accNo));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
 
-            else {
-                System.out.println("❌ Invalid choice!");
+            // ================= EDIT =================
+            else if (ch == 5) {
+
+                int accNo = getValidNumber("Enter Account No: ");
+                sc.nextLine();
+
+                String newName;
+                while (true) {
+                    System.out.print("Enter New Name: ");
+                    newName = sc.nextLine();
+
+                    if (PasswordUtil.isValidName(newName)) break;
+                    else System.out.println("❌ Invalid Name!");
+                }
+
+                if (RoleService.hasPermission(role, "EDIT_USER")) {
+                    System.out.println(service.updateAccount(accNo, newName));
+                } else {
+                    System.out.println("Access Denied!");
+                }
             }
+
+            else if (ch == 6) break;
+            else System.out.println("❌ Invalid choice!");
         }
     }
 
     // ================= USER =================
     static void userMenu() throws Exception {
 
-        System.out.print("Enter Account Number: ");
-        int accNo = sc.nextInt();
+        int accNo = getValidNumber("Enter Account Number: ");
 
         Account acc = service.findAccount(accNo);
 
@@ -154,8 +249,7 @@ public class BankApp {
             System.out.println("Wrong Password!");
             return;
         }
-
-        String role = "USER";
+        showWelcome(acc.getName());
 
         while (true) {
 
@@ -168,72 +262,112 @@ public class BankApp {
             System.out.println("6. Back");
             System.out.print("Enter choice: ");
 
-            int ch = sc.nextInt();
+            int ch = getValidInt();
 
             if (ch == 1) {
-
-                System.out.print("Amount: ");
-                double amt = sc.nextDouble();
-
-                if (RoleService.hasPermission(role, "DEPOSIT")) {
-                    System.out.println(service.deposit(acc, amt));
-                } else {
-                    System.out.println("Access Denied!");
-                }
+                double amt = getValidAmount();
+                System.out.println(service.deposit(acc, amt));
             }
 
             else if (ch == 2) {
-
-                System.out.print("Amount: ");
-                double amt = sc.nextDouble();
-
-                if (RoleService.hasPermission(role, "WITHDRAW")) {
-                    System.out.println(service.withdraw(acc, amt));
-                } else {
-                    System.out.println("Access Denied!");
-                }
+                double amt = getValidAmount();
+                System.out.println(service.withdraw(acc, amt));
             }
 
             else if (ch == 3) {
-
-                if (RoleService.hasPermission(role, "BALANCE")) {
-                    acc.display();
-                } else {
-                    System.out.println("Access Denied!");
-                }
+                acc.display();
             }
 
             else if (ch == 4) {
+                int toAcc = getValidNumber("Receiver Acc: ");
+                double amt = getValidAmount();
 
-                System.out.print("Receiver Acc: ");
-                int toAcc = sc.nextInt();
-
-                System.out.print("Amount: ");
-                double amt = sc.nextDouble();
-
-                if (RoleService.hasPermission(role, "TRANSFER")) {
-                    System.out.println(service.transfer(acc, toAcc, amt));
-                } else {
-                    System.out.println("Access Denied!");
-                }
+                System.out.println(service.transfer(acc, toAcc, amt));
             }
 
             else if (ch == 5) {
-
-                if (RoleService.hasPermission(role, "HISTORY")) {
-                    FileUtil.showTransactions(acc.getAccNumber());
-                } else {
-                    System.out.println("Access Denied!");
-                }
+                FileUtil.showTransactions(acc.getAccNumber());
             }
 
-            else if (ch == 6) {
-                break;
+            else if (ch == 6) break;
+            else System.out.println("❌ Invalid choice!");
+        }
+    }
+
+    // ================= VALIDATIONS =================
+
+    public static int getValidInt() {
+        while (true) {
+            String input = sc.next();
+
+            if (!input.matches("\\d+")) {
+                System.out.println("❌ Enter valid number!");
+                continue;
             }
 
-            else {
-                System.out.println("❌ Invalid choice!");
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Number too large!");
             }
         }
+    }
+
+    public static int getValidNumber(String msg) {
+        while (true) {
+            System.out.print(msg);
+            String input = sc.next();
+
+            if (!input.matches("\\d+")) {
+                System.out.println("❌ Invalid number!");
+                continue;
+            }
+
+            try {
+                return Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("❌ Number too large!");
+            }
+        }
+    }
+
+    public static double getValidAmount() {
+        while (true) {
+            System.out.print("Amount: ");
+            String input = sc.next();
+
+            if (!input.matches("\\d+(\\.\\d+)?")) {
+                System.out.println("❌ Enter valid amount!");
+                continue;
+            }
+
+            double amt = Double.parseDouble(input);
+
+            if (amt <= 0) {
+                System.out.println("❌ Amount must be greater than 0!");
+            } else {
+                return amt;
+            }
+        }
+    }
+    
+ // ================= WELCOME MESSAGE =================
+    public static void showWelcome(String name) {
+
+        String greeting;
+
+        int hour = java.time.LocalTime.now().getHour();
+
+        if (hour < 12) greeting = "Good Morning";
+        else if (hour < 17) greeting = "Good Afternoon";
+        else if (hour < 21) greeting = "Good Evening";
+        else greeting = "Good Night";
+
+        System.out.println("\n=======================================");
+        System.out.println("🏦       SECURE BANK SYSTEM       🏦");
+        System.out.println("=======================================");
+        System.out.println("👋 " + greeting + ", " + name + "!");
+        System.out.println("🔐 Login Successful");
+        System.out.println("=======================================\n");
     }
 }

@@ -31,17 +31,17 @@ public class BankService {
         return null;
     }
 
-    public String createAccount(String name, String type, double bal,String password) throws Exception {
+    public String createAccount(String name, String type, double bal,String password,String phone, String email) throws Exception {
     	
-    	 int accNo = generateAccountNumber();   // 👈 AUTO GENERATE
+    	 int accNo = generateAccountNumber();   
 
         if (findAccount(accNo) != null) {
             return "Account already exists!";
         }
 
         Account acc = type.equalsIgnoreCase("Savings")
-                ? new SavingAccount(accNo, name, bal,password)
-                : new CurrentAccount(accNo, name, bal,password);
+                ? new SavingAccount(accNo, name, bal,password, phone, email)
+                : new CurrentAccount(accNo, name, bal,password, phone, email);
 
         accountList.add(acc);
         FileUtil.saveAccount(acc);
@@ -148,5 +148,35 @@ public class BankService {
 
         return res;
     }
+    
+    public String deleteAccount(int accNo) throws Exception {
+
+        Account acc = findAccount(accNo);
+
+        if (acc == null) return "Account not found!";
+
+        accountList.remove(acc);
+        FileUtil.updateAllAccounts(accountList);
+
+        return "Account Deleted Successfully!";
+    }
+    
+    public String updateAccount(int accNo, String newName) throws Exception {
+
+        Account acc = findAccount(accNo);
+
+        if (acc == null) return "Account not found!";
+
+       
+        java.lang.reflect.Field field = acc.getClass().getSuperclass().getDeclaredField("name");
+        field.setAccessible(true);
+        field.set(acc, newName);
+
+        FileUtil.updateAllAccounts(accountList);
+
+        return "Account Updated Successfully!";
+    }
+    
+    
 
 }
