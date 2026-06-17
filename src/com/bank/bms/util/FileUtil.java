@@ -82,14 +82,26 @@ public class FileUtil {
 
             String[] parts = line.split(",");
 
-            
-            if (parts.length < 4) continue;
-
-            System.out.println(
+            // ✅ NEW FORMAT (5 parts)
+            if (parts.length >= 5) {
+                System.out.println(
+                    "Type: " + parts[1] +
+                    " | Amount: " + parts[2] +
+                    " | Time(ms): " + parts[3] +
+                    " | Date: " + parts[4]
+                );
+            }
+            // ✅ OLD FORMAT (4 parts)
+            else if (parts.length == 4) {
+                System.out.println(
                     "Type: " + parts[1] +
                     " | Amount: " + parts[2] +
                     " | Date: " + parts[3]
-            );
+                );
+            }
+            else {
+                System.out.println("⚠ Invalid transaction record skipped");
+            }
         }
 
         reader.close();
@@ -114,24 +126,23 @@ public class FileUtil {
 
             String[] parts = line.split(",");
 
-           
-            if (parts.length < 4) continue;
+            // ✅ ensure correct format (now should be at least 5 parts)
+            if (parts.length < 5) continue;
 
             double amount = Double.parseDouble(parts[2]);
-            String dateStr = parts[3];
-
-            java.text.SimpleDateFormat format =
-                    new java.text.SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
 
             try {
-                Date date = format.parse(dateStr);
+                // ✅ FIX: read milliseconds instead of parsing string date
+                long millis = Long.parseLong(parts[3]);
+
+                Date date = new Date(millis);
 
                 if (currentTime - date.getTime() <= timeLimit) {
                     total += amount;
                 }
 
             } catch (Exception e) {
-                e.printStackTrace();
+                System.out.println("⚠ Invalid transaction entry skipped");
             }
         }
 

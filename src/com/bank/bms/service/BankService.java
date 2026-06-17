@@ -1,6 +1,7 @@
 package com.bank.bms.service;
 
 import java.util.List;
+import java.util.Random;
 
 import com.bank.bms.model.Account;
 import com.bank.bms.model.CurrentAccount;
@@ -51,12 +52,21 @@ public class BankService {
     
     private int generateAccountNumber() {
 
-        if (accountList.isEmpty()) {
-            return 1001; // starting account number
+        Random random = new Random();
+        int accNo;
+
+        while (true) {
+
+            // ✅ generate 6-digit random account number
+            accNo = 100000 + random.nextInt(900000);
+
+            // ✅ check if already exists
+            if (findAccount(accNo) == null) {
+                break;
+            }
         }
 
-        int lastAccNo = accountList.get(accountList.size() - 1).getAccNumber();
-        return lastAccNo + 1;
+        return accNo;
     }
 
     public String deposit(Account acc, double amt) throws Exception {

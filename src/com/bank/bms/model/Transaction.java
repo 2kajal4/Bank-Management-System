@@ -25,6 +25,13 @@ public class Transaction {
         return accNumber;
     }
     public String toFileString() {
-        return accNumber + "," + type + "," + amount + "," + date;
+    	long millis = System.currentTimeMillis();
+
+        java.text.SimpleDateFormat format =
+            new java.text.SimpleDateFormat("dd-MM-yyyy HH:mm:ss.SSS");
+
+        String formattedDate = format.format(new java.util.Date(millis));
+
+        return accNumber + "," + type + "," + amount + "," + millis + "," + formattedDate;
     }
 }

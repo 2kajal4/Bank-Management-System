@@ -2,11 +2,14 @@ package com.bank.bms.app;
 
 import com.bank.bms.service.RoleService;
 import com.bank.bms.util.PasswordUtil;
+
+import java.io.File;
 import java.util.*;
 
 import com.bank.bms.model.Account;
 import com.bank.bms.service.BankService;
 import com.bank.bms.util.FileUtil;
+import com.bank.bms.util.OtpUtil;
 
 public class BankApp {
 
@@ -37,6 +40,18 @@ public class BankApp {
 
     // ================= ADMIN =================
     static void adminMenu() throws Exception {
+    	
+    	 // ✅ ADD THIS HERE
+        System.out.println("\n--- ADMIN ACCESS ---");
+        System.out.println("1. Login");
+        System.out.println("2. Forgot Password");
+
+        int choice = getValidInt();
+
+        if (choice == 2) {
+            forgotAdminPassword();
+            return;
+        }
 
         String username;
 
@@ -54,6 +69,41 @@ public class BankApp {
         if (!RoleService.authenticate(username, inputPass)) {
             System.out.println("Wrong Username or Password!");
             return;
+        }
+        
+        String otp = OtpUtil.generateOTP();
+        OtpUtil.saveOTP(otp);
+
+        System.out.println("📩 OTP sent to your registered system file");
+        System.out.println("👉 Open otp.txt to view OTP");
+
+        int attempts = 3;
+
+        while (attempts > 0) {
+
+            System.out.print("Enter OTP: ");
+            String userOtp = sc.next();
+
+            String realOtp = OtpUtil.readOTP();
+
+            if (userOtp.equals(realOtp)) {
+
+                // ✅ success → delete OTP
+                java.io.File file = new java.io.File("otp.txt");
+                if (file.exists()) file.delete();
+
+                System.out.println("✅ OTP Verified! Login Successful");
+                break;
+            } else {
+                attempts--;
+                System.out.println("❌ Wrong OTP! Attempts left: " + attempts);
+            }
+
+            // ❌ if all attempts finished
+            if (attempts == 0) {
+                System.out.println("🚫 Too many failed attempts! Access Denied.");
+                return;
+            }
         }
 
         showWelcome(username);
@@ -114,7 +164,7 @@ public class BankApp {
 
                 String encryptedPass = PasswordUtil.encrypt(pass);
 
-                // ✅ PHONE (ADD HERE)
+                
                 String phone;
                 while (true) {
                     System.out.print("Phone: ");
@@ -124,7 +174,7 @@ public class BankApp {
                     else System.out.println("❌ Enter valid 10-digit phone number!");
                 }
 
-                // ✅ EMAIL (ADD HERE)
+                
                 String email;
                 while (true) {
                     System.out.print("Email: ");
@@ -134,7 +184,7 @@ public class BankApp {
                     else System.out.println("❌ Invalid email!");
                 }
 
-                // SERVICE CALL
+                
                 if (RoleService.hasPermission(role, "CREATE_ACCOUNT")) {
                     System.out.println(
                         service.createAccount(name, type, bal, encryptedPass, phone, email)
@@ -232,6 +282,17 @@ public class BankApp {
 
     // ================= USER =================
     static void userMenu() throws Exception {
+    	
+    	System.out.println("\n--- USER ACCESS ---");
+        System.out.println("1. Login");
+        System.out.println("2. Forgot Password");
+
+        int choice = getValidInt();
+
+        if (choice == 2) {
+            forgotUserPassword();
+            return;
+        }
 
         int accNo = getValidNumber("Enter Account Number: ");
 
@@ -369,5 +430,131 @@ public class BankApp {
         System.out.println("👋 " + greeting + ", " + name + "!");
         System.out.println("🔐 Login Successful");
         System.out.println("=======================================\n");
+    }
+    
+    public static void forgotUserPassword() throws Exception {
+
+        int accNo = getValidNumber("Enter Account Number: ");
+
+        Account acc = service.findAccount(accNo);
+
+        if (acc == null) {
+            System.out.println("❌ Account not found!");
+            return;
+        }
+
+        // ✅ OTP FLOW
+        String otp = OtpUtil.generateOTP();
+        OtpUtil.saveOTP(otp);
+
+        System.out.println("📩 OTP sent to your system file (otp.txt)");
+
+        int attempts = 3;
+
+        while (attempts > 0) {
+
+            System.out.print("Enter OTP: ");
+            String userOtp = sc.next();
+
+            String realOtp = OtpUtil.readOTP();
+
+            if (userOtp.equals(realOtp)) {
+
+                // delete OTP
+                java.io.File file = new java.io.File("otp.txt");
+                if (file.exists()) file.delete();
+
+                System.out.println("✅ OTP Verified!");
+
+                // 🔐 RESET PASSWORD
+                String newPass;
+
+                while (true) {
+                    System.out.print("Enter New Password: ");
+                    newPass = sc.next();
+
+                    if (!PasswordUtil.isStrongPassword(newPass)) {
+                        System.out.println("❌ Weak Password!");
+                    } else break;
+                }
+
+                String encrypted = PasswordUtil.encrypt(newPass);
+
+                // update password using reflection (same as update name)
+                java.lang.reflect.Field field =
+                    acc.getClass().getSuperclass().getDeclaredField("password");
+
+                field.setAccessible(true);
+                field.set(acc, encrypted);
+
+                FileUtil.updateAllAccounts(service.getAllAccounts());
+
+                System.out.println("✅ Password Reset Successful!");
+                return;
+
+            } else {
+                attempts--;
+                System.out.println("❌ Wrong OTP! Attempts left: " + attempts);
+            }
+        }
+
+        System.out.println("🚫 Too many failed attempts!");
+    }
+    
+    public static void forgotAdminPassword() {
+
+        System.out.print("Enter Username: ");
+        String username = sc.next();
+
+        // check exists
+        if (!RoleService.roleExists(username)) {
+            System.out.println("❌ User not found!");
+            return;
+        }
+
+        String otp = OtpUtil.generateOTP();
+        OtpUtil.saveOTP(otp);
+
+        System.out.println("📩 OTP sent to your system file");
+
+        int attempts = 3;
+
+        while (attempts > 0) {
+
+            System.out.print("Enter OTP: ");
+            String userOtp = sc.next();
+
+            if (userOtp.equals(OtpUtil.readOTP())) {
+
+                // delete OTP
+                new java.io.File("otp.txt").delete();
+
+                String newPass;
+
+                while (true) {
+                    System.out.print("Enter New Password: ");
+                    newPass = sc.next();
+
+                    if (!PasswordUtil.isStrongPassword(newPass)) {
+                        System.out.println("❌ Weak Password!");
+                    } else break;
+                }
+
+                // ✅ FIX: encrypt before saving
+                String encrypted = PasswordUtil.encrypt(newPass);
+
+                // ✅ update in roles.properties
+                RoleService.updatePassword(username, encrypted);
+
+                System.out.println("✅ Password Reset Successful!");
+                return;
+
+            } else {
+                attempts--;
+                System.out.println("❌ Wrong OTP! Attempts left: " + attempts);
+            }
+        }
+
+        System.out.println("🚫 Too many failed attempts!");
     }
 }
